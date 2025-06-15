@@ -6,6 +6,14 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { FileText, Image, Video, Send } from 'lucide-react';
 import { toast } from "@/hooks/use-toast";
 import React from "react";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const SubmissionForm = () => {
   const handleSubmit = (e: React.FormEvent) => {
@@ -32,9 +40,9 @@ const SubmissionForm = () => {
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
-            <label htmlFor="message" className="block text-sm font-medium text-foreground mb-2">
+            <Label htmlFor="message" className="block text-foreground mb-2">
               Your Report (required)
-            </label>
+            </Label>
             <Textarea
               id="message"
               placeholder="Describe the incident in detail. Who, what, where, when..."
@@ -42,20 +50,38 @@ const SubmissionForm = () => {
               required
             />
           </div>
+          <div>
+            <Label htmlFor="location" className="block text-foreground mb-2">
+              District / Location (optional)
+            </Label>
+            <Select>
+              <SelectTrigger id="location" className="w-full bg-background">
+                <SelectValue placeholder="Select a district" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="downtown">Downtown</SelectItem>
+                <SelectItem value="financial-district">Financial District</SelectItem>
+                <SelectItem value="waterfront">Waterfront</SelectItem>
+                <SelectItem value="suburbs">Suburbs</SelectItem>
+                <SelectItem value="industrial-zone">Industrial Zone</SelectItem>
+                <SelectItem value="other">Other</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
              <div>
-                <label htmlFor="image-upload" className="block text-sm font-medium text-foreground mb-2">
+                <Label htmlFor="image-upload" className="block text-foreground mb-2">
                   Upload Image (optional)
-                </label>
+                </Label>
                 <div className="relative">
                   <Input id="image-upload" type="file" accept="image/*" className="pl-10 file:text-muted-foreground" />
                   <Image className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                 </div>
               </div>
               <div>
-                <label htmlFor="video-upload" className="block text-sm font-medium text-foreground mb-2">
+                <Label htmlFor="video-upload" className="block text-foreground mb-2">
                   Upload Video (optional)
-                </label>
+                </Label>
                 <div className="relative">
                   <Input id="video-upload" type="file" accept="video/*" className="pl-10 file:text-muted-foreground" />
                   <Video className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />

@@ -9,6 +9,7 @@ const mockPosts: Post[] = [
     timestamp: "4 hours ago",
     tags: ["Finance", "Government"],
     type: 'text',
+    location: "Downtown",
   },
   {
     id: 2,
@@ -17,6 +18,7 @@ const mockPosts: Post[] = [
     timestamp: "1 day ago",
     tags: ["Real Estate", "Environment"],
     type: 'image',
+    location: "Suburbs",
   },
   {
     id: 3,
@@ -25,6 +27,7 @@ const mockPosts: Post[] = [
     timestamp: "3 days ago",
     tags: ["Bribery", "Small Business"],
     type: 'text',
+    location: "Financial District",
   },
 ];
 

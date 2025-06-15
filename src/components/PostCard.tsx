@@ -1,7 +1,7 @@
 
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Clock } from "lucide-react";
+import { Clock, MapPin } from "lucide-react";
 
 export interface Post {
   id: number;
@@ -10,6 +10,7 @@ export interface Post {
   timestamp: string;
   tags: string[];
   type: 'text' | 'image' | 'video';
+  location: string;
 }
 
 const PostCard = ({ post }: { post: Post }) => {
@@ -19,12 +20,18 @@ const PostCard = ({ post }: { post: Post }) => {
         <div className="flex justify-between items-start gap-4">
             <div className="flex-1">
                 <CardTitle>{post.title}</CardTitle>
-                <CardDescription className="flex items-center text-sm mt-1">
-                    <Clock className="h-4 w-4 mr-1.5" />
-                    {post.timestamp}
-                </CardDescription>
+                <div className="flex items-center flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground mt-2">
+                    <span className="flex items-center">
+                        <Clock className="h-4 w-4 mr-1.5" />
+                        {post.timestamp}
+                    </span>
+                    <span className="flex items-center">
+                        <MapPin className="h-4 w-4 mr-1.5" />
+                        {post.location}
+                    </span>
+                </div>
             </div>
-            <div className="flex gap-2 flex-shrink-0">
+            <div className="flex gap-2 flex-shrink-0 flex-wrap justify-end">
                 {post.tags.map(tag => (
                     <Badge key={tag} variant="secondary">{tag}</Badge>
                 ))}
