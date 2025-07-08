@@ -6,7 +6,7 @@ import TelegramChat from '@/components/TelegramChat';
 import SocialPostCard from '@/components/SocialPostCard';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { TrendingUp, Fire, Eye, MessageCircle } from 'lucide-react';
+import { TrendingUp, Flame, Eye, MessageCircle } from 'lucide-react';
 import { SocialPost } from './Posts';
 
 const trendingPosts: SocialPost[] = [
@@ -85,7 +85,7 @@ const Trending = () => {
                 <Card className="bg-card/50 backdrop-blur-sm border-2 border-primary/10 sticky top-8">
                   <CardHeader>
                     <CardTitle className="flex items-center">
-                      <Fire className="h-5 w-5 text-orange-500 mr-2" />
+                      <Flame className="h-5 w-5 text-orange-500 mr-2" />
                       Trending Topics
                     </CardTitle>
                   </CardHeader>
@@ -109,7 +109,7 @@ const Trending = () => {
                   <div key={post.id} className="relative">
                     {index === 0 && (
                       <Badge className="absolute -top-3 -left-3 z-10 bg-orange-500 text-white">
-                        <Fire className="h-3 w-3 mr-1" />
+                        <Flame className="h-3 w-3 mr-1" />
                         Hot
                       </Badge>
                     )}
