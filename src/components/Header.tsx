@@ -10,7 +10,7 @@ const Header = () => {
           <Shield className="h-8 w-8 text-primary mr-3" />
           <div>
             <h1 className="text-3xl font-bold tracking-tighter text-primary">
-              EXPOSE
+              SHIELD
             </h1>
             <p className="text-muted-foreground text-sm">Your Voice, Shielded.</p>
           </div>
