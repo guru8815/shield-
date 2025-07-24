@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Send, Paperclip, Smile, Phone, Video, MoreVertical } from 'lucide-react';
+import { Send, Paperclip, Smile, MoreVertical } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -62,12 +62,6 @@ const TelegramChat = () => {
           </div>
         </div>
         <div className="flex items-center space-x-2">
-          <Button variant="ghost" size="icon" className="h-8 w-8">
-            <Phone className="h-4 w-4" />
-          </Button>
-          <Button variant="ghost" size="icon" className="h-8 w-8">
-            <Video className="h-4 w-4" />
-          </Button>
           <Button variant="ghost" size="icon" className="h-8 w-8">
             <MoreVertical className="h-4 w-4" />
           </Button>
