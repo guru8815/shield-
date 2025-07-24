@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Button } from "@/components/ui/button";
-import { Home, Bell, TrendingUp, User } from 'lucide-react';
+import { Home, Bell, TrendingUp, User, Shield } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 
 const BottomNavigation = () => {
@@ -11,6 +11,7 @@ const BottomNavigation = () => {
     { path: '/', label: 'Home', icon: Home },
     { path: '/updates', label: 'Updates', icon: Bell },
     { path: '/trending', label: 'Trending', icon: TrendingUp },
+    { path: '/secure-chat', label: 'Secure', icon: Shield },
     { path: '/profile', label: 'Profile', icon: User },
   ];
 
