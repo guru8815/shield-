@@ -10,6 +10,7 @@ import Posts from "./pages/Posts";
 import Updates from "./pages/Updates";
 import Trending from "./pages/Trending";
 import Profile from "./pages/Profile";
+import SecureChat from "./pages/SecureChat";
 import NotFound from "./pages/NotFound";
 import BottomNavigation from "./components/BottomNavigation";
 
@@ -29,6 +30,7 @@ const App = () => (
             <Route path="/updates" element={<Updates />} />
             <Route path="/trending" element={<Trending />} />
             <Route path="/profile" element={<Profile />} />
+            <Route path="/secure-chat" element={<SecureChat />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
