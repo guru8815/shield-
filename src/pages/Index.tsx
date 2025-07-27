@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import Header from '@/components/Header';
-import SubmissionForm from '@/components/SubmissionForm';
 import PostFeed from '@/components/PostFeed';
 import TelegramChat from '@/components/TelegramChat';
 import ChatToggle from '@/components/ChatToggle';
@@ -24,7 +23,6 @@ const Index = () => {
           <Header />
           
           <main className="container mx-auto px-4 py-8">
-            <SubmissionForm />
             <PostFeed />
           </main>
 
