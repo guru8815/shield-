@@ -1,5 +1,7 @@
 
 import PostCard, { Post } from './PostCard';
+import RelatedReports from './RelatedReports';
+import TrendingTopics from './TrendingTopics';
 
 const mockPosts: Post[] = [
   {
@@ -32,12 +34,30 @@ const mockPosts: Post[] = [
 ];
 
 const PostFeed = () => {
+  // Extract all unique tags for trend analysis
+  const allTags = [...new Set(mockPosts.flatMap(post => post.tags))];
+  
   return (
-    <div className="mt-16 w-full max-w-4xl mx-auto">
+    <div className="mt-16 w-full max-w-4xl mx-auto space-y-8">
       <h2 className="text-3xl font-bold text-center mb-8">Exposed Reports</h2>
+      
+      {/* Trending Topics Section */}
+      <TrendingTopics posts={mockPosts} />
+      
       <div className="space-y-8">
-        {mockPosts.map(post => (
-          <PostCard key={post.id} post={post} />
+        {mockPosts.map((post, index) => (
+          <div key={post.id} className="space-y-6">
+            <PostCard post={post} />
+            
+            {/* Show related reports after every 2nd post */}
+            {(index + 1) % 2 === 0 && (
+              <RelatedReports 
+                currentTags={post.tags} 
+                allPosts={mockPosts} 
+                excludeId={post.id}
+              />
+            )}
+          </div>
         ))}
       </div>
     </div>

@@ -9,7 +9,7 @@ const BottomNavigation = () => {
 
   const navItems = [
     { path: '/', label: 'Home', icon: Home },
-    { path: '/submit', label: 'Submit', icon: FileText },
+    { path: '/submit', label: 'Report', icon: FileText },
     { path: '/updates', label: 'Updates', icon: Bell },
     { path: '/trending', label: 'Trending', icon: TrendingUp },
     { path: '/secure-chat', label: 'Secure', icon: Shield },
