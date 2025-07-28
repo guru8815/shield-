@@ -1,13 +1,15 @@
 
 import React from 'react';
 import { Button } from "@/components/ui/button";
-import { Home, Bell, TrendingUp, User, Shield, FileText } from 'lucide-react';
+import { Home, Bell, TrendingUp, User, Shield, FileText, Settings } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
+import { useAuth } from '@/hooks/useAuth';
 
 const BottomNavigation = () => {
   const location = useLocation();
+  const { isAdmin } = useAuth();
 
-  const navItems = [
+  const baseNavItems = [
     { path: '/', label: 'Home', icon: Home },
     { path: '/submit', label: 'Report', icon: FileText },
     { path: '/updates', label: 'Updates', icon: Bell },
@@ -15,6 +17,12 @@ const BottomNavigation = () => {
     { path: '/secure-chat', label: 'Secure', icon: Shield },
     { path: '/profile', label: 'Profile', icon: User },
   ];
+
+  const adminNavItems = [
+    { path: '/admin', label: 'Admin', icon: Settings },
+  ];
+
+  const navItems = isAdmin ? [...baseNavItems, ...adminNavItems] : baseNavItems;
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 bg-card/95 backdrop-blur-sm border-t border-border z-50">
