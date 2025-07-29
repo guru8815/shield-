@@ -81,7 +81,70 @@ const SocialPostCard = ({ post }: SocialPostCardProps) => {
       <CardContent>
         <p className="text-muted-foreground whitespace-pre-wrap mb-4">{post.content}</p>
         
-        {post.type === 'image' && (
+        {/* Media Display */}
+        {post.media_urls && post.media_urls.length > 0 && (
+          <div className="mb-4">
+            {post.media_urls.length === 1 ? (
+              // Single media item
+              <div className="rounded-lg overflow-hidden border border-border">
+                {post.media_urls[0].includes('evidence-images') || /\.(jpg|jpeg|png|gif|webp)$/i.test(post.media_urls[0]) ? (
+                  <img 
+                    src={post.media_urls[0]} 
+                    alt="Evidence" 
+                    className="w-full h-auto object-cover max-h-96"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).style.display = 'none';
+                    }}
+                  />
+                ) : post.media_urls[0].includes('evidence-videos') || /\.(mp4|mpeg|mov|avi)$/i.test(post.media_urls[0]) ? (
+                  <video 
+                    src={post.media_urls[0]} 
+                    controls 
+                    className="w-full h-auto max-h-96"
+                    onError={(e) => {
+                      (e.target as HTMLVideoElement).style.display = 'none';
+                    }}
+                  />
+                ) : null}
+              </div>
+            ) : (
+              // Multiple media items - grid layout
+              <div className="grid grid-cols-2 gap-2">
+                {post.media_urls.slice(0, 4).map((url, index) => (
+                  <div key={index} className="rounded-lg overflow-hidden border border-border aspect-square relative">
+                    {url.includes('evidence-images') || /\.(jpg|jpeg|png|gif|webp)$/i.test(url) ? (
+                      <img 
+                        src={url} 
+                        alt={`Evidence ${index + 1}`} 
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).style.display = 'none';
+                        }}
+                      />
+                    ) : url.includes('evidence-videos') || /\.(mp4|mpeg|mov|avi)$/i.test(url) ? (
+                      <video 
+                        src={url} 
+                        controls 
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          (e.target as HTMLVideoElement).style.display = 'none';
+                        }}
+                      />
+                    ) : null}
+                    {post.media_urls.length > 4 && index === 3 && (
+                      <div className="absolute inset-0 bg-black/50 flex items-center justify-center text-white font-semibold">
+                        +{post.media_urls.length - 4} more
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+        
+        {/* Fallback for old posts without media_urls but with type image */}
+        {(!post.media_urls || post.media_urls.length === 0) && post.type === 'image' && (
           <div className="mb-4 rounded-lg overflow-hidden border border-border">
             <img 
               src="https://images.unsplash.com/photo-1599305445671-ac291c95aaa9?q=80&w=2069&auto=format&fit=crop" 

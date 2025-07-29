@@ -11,7 +11,7 @@ import { SocialPost } from './Posts';
 
 const trendingPosts: SocialPost[] = [
   {
-    id: 1,
+    id: "1",
     title: "Major Corruption Scandal Exposed",
     content: "Breaking: Investigation reveals systematic corruption in government contracts worth millions. Citizens demand immediate action and transparency.",
     timestamp: "4 hours ago",
@@ -20,10 +20,11 @@ const trendingPosts: SocialPost[] = [
     location: "Capital City",
     likes: 1247,
     comments: 356,
-    shares: 189
+    shares: 189,
+    created_at: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString()
   },
   {
-    id: 2,
+    id: "2",
     title: "Whistleblower Protection Act",
     content: "New legislation proposed to strengthen protection for those who expose corruption. Community rallying for support.",
     timestamp: "8 hours ago",
@@ -32,10 +33,11 @@ const trendingPosts: SocialPost[] = [
     location: "Parliament",
     likes: 892,
     comments: 203,
-    shares: 145
+    shares: 145,
+    created_at: new Date(Date.now() - 8 * 60 * 60 * 1000).toISOString()
   },
   {
-    id: 3,
+    id: "3",
     title: "Anonymous Tip Leads to Arrest",
     content: "Thanks to an anonymous report through our platform, authorities have made a significant arrest in an ongoing fraud case.",
     timestamp: "12 hours ago",
@@ -44,7 +46,8 @@ const trendingPosts: SocialPost[] = [
     location: "Downtown",
     likes: 756,
     comments: 167,
-    shares: 234
+    shares: 234,
+    created_at: new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString()
   }
 ];
 

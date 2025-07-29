@@ -122,7 +122,10 @@ export type Database = {
           deleted_reason: string | null
           id: string
           is_anonymous: boolean | null
+          location: string | null
+          media_urls: string[] | null
           status: string | null
+          submission_type: string | null
           tags: string[] | null
           title: string
           updated_at: string
@@ -135,7 +138,10 @@ export type Database = {
           deleted_reason?: string | null
           id?: string
           is_anonymous?: boolean | null
+          location?: string | null
+          media_urls?: string[] | null
           status?: string | null
+          submission_type?: string | null
           tags?: string[] | null
           title: string
           updated_at?: string
@@ -148,7 +154,10 @@ export type Database = {
           deleted_reason?: string | null
           id?: string
           is_anonymous?: boolean | null
+          location?: string | null
+          media_urls?: string[] | null
           status?: string | null
+          submission_type?: string | null
           tags?: string[] | null
           title?: string
           updated_at?: string
