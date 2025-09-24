@@ -1,27 +1,46 @@
-
-import React, { useState, useEffect } from 'react';
-import Header from '@/components/Header';
-import ChatToggle from '@/components/ChatToggle';
-import TelegramChat from '@/components/TelegramChat';
+import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Textarea } from "@/components/ui/textarea";
+import { Separator } from "@/components/ui/separator";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { 
+  Calendar, 
+  MapPin, 
+  Edit3, 
+  Save, 
+  X, 
+  FileText, 
+  Clock, 
+  Shield, 
+  Lock, 
+  Eye,
+  Bell,
+  Database,
+  Key,
+  Search,
+  UserPlus,
+  UserMinus,
+  Users
+} from 'lucide-react';
+import Header from '@/components/Header';
+import ChatToggle from '@/components/ChatToggle';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from '@/hooks/use-toast';
-import { User, Shield, FileText, Award, Settings, Lock, Edit, Save, Calendar, MapPin } from 'lucide-react';
+import { toast } from "@/components/ui/use-toast";
 
 interface UserProfile {
   id: string;
   username: string;
-  display_name: string | null;
-  avatar_url: string | null;
+  display_name: string;
+  avatar_url?: string;
   created_at: string;
   is_banned: boolean;
+  privacy_mode?: string;
 }
 
 interface UserPost {
@@ -29,39 +48,53 @@ interface UserPost {
   title: string;
   content: string;
   created_at: string;
-  location: string | null;
-  media_urls: string[] | null;
+  location?: string;
+  media_urls?: string[];
   status: string;
 }
 
+interface SearchResult {
+  id: string;
+  username: string;
+  display_name: string;
+  avatar_url?: string;
+  privacy_mode?: string;
+}
+
+interface FollowData {
+  followers_count: number;
+  following_count: number;
+  is_following: boolean;
+}
+
 const Profile = () => {
-  const { user, loading: authLoading } = useAuth();
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
-  const [userPosts, setUserPosts] = useState<UserPost[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [posts, setPosts] = useState<UserPost[]>([]);
+  const [followData, setFollowData] = useState<FollowData>({ followers_count: 0, following_count: 0, is_following: false });
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
   const [editForm, setEditForm] = useState({
     display_name: '',
     username: '',
-    bio: ''
+    privacy_mode: 'public'
   });
+  
+  // Settings state
   const [settings, setSettings] = useState({
-    anonymous_mode: true,
-    email_notifications: false,
-    data_sharing: false
+    anonymousMode: false,
+    notifications: true,
+    dataSharing: false
   });
 
-  useEffect(() => {
-    if (user) {
-      fetchUserProfile();
-      fetchUserPosts();
-    }
-  }, [user]);
+  const { user, loading: authLoading } = useAuth();
 
   const fetchUserProfile = async () => {
     if (!user) return;
-    
+
     try {
       const { data, error } = await supabase
         .from('profiles')
@@ -69,15 +102,25 @@ const Profile = () => {
         .eq('id', user.id)
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching profile:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load profile data",
+          variant: "destructive"
+        });
+        return;
+      }
 
-      setUserProfile(data);
-      setEditForm({
-        display_name: data.display_name || '',
-        username: data.username || '',
-        bio: ''
-      });
-    } catch (error: any) {
+      if (data) {
+        setProfile(data);
+        setEditForm({
+          display_name: data.display_name || '',
+          username: data.username || '',
+          privacy_mode: data.privacy_mode || 'public'
+        });
+      }
+    } catch (error) {
       console.error('Error fetching profile:', error);
       toast({
         title: "Error",
@@ -87,9 +130,35 @@ const Profile = () => {
     }
   };
 
+  const fetchFollowData = async () => {
+    if (!user) return;
+
+    try {
+      // Get followers count
+      const { count: followersCount } = await supabase
+        .from('follows')
+        .select('*', { count: 'exact', head: true })
+        .eq('following_id', user.id);
+
+      // Get following count
+      const { count: followingCount } = await supabase
+        .from('follows')
+        .select('*', { count: 'exact', head: true })
+        .eq('follower_id', user.id);
+
+      setFollowData({
+        followers_count: followersCount || 0,
+        following_count: followingCount || 0,
+        is_following: false
+      });
+    } catch (error) {
+      console.error('Error fetching follow data:', error);
+    }
+  };
+
   const fetchUserPosts = async () => {
     if (!user) return;
-    
+
     try {
       const { data, error } = await supabase
         .from('posts')
@@ -98,57 +167,164 @@ const Profile = () => {
         .order('created_at', { ascending: false })
         .limit(10);
 
-      if (error) throw error;
-      setUserPosts(data || []);
-    } catch (error: any) {
+      if (error) {
+        console.error('Error fetching posts:', error);
+        return;
+      }
+
+      setPosts(data || []);
+    } catch (error) {
       console.error('Error fetching posts:', error);
     }
   };
 
   const updateProfile = async () => {
-    if (!user || !userProfile) return;
-    
-    setLoading(true);
+    if (!user || !profile) return;
+
     try {
       const { error } = await supabase
         .from('profiles')
         .update({
-          display_name: editForm.display_name.trim() || null,
-          username: editForm.username.trim()
+          display_name: editForm.display_name,
+          username: editForm.username,
+          privacy_mode: editForm.privacy_mode,
         })
         .eq('id', user.id);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error updating profile:', error);
+        toast({
+          title: "Error",
+          description: "Failed to update profile",
+          variant: "destructive"
+        });
+        return;
+      }
 
-      await fetchUserProfile();
-      setIsEditing(false);
       toast({
         title: "Success",
-        description: "Profile updated successfully",
+        description: "Profile updated successfully"
       });
-    } catch (error: any) {
+      
+      setIsEditing(false);
+      fetchUserProfile(); // Refresh profile data
+    } catch (error) {
       console.error('Error updating profile:', error);
       toast({
         title: "Error",
-        description: error.message || "Failed to update profile",
+        description: "Failed to update profile",
         variant: "destructive"
       });
-    } finally {
-      setLoading(false);
     }
   };
 
-  const toggleChat = () => {
-    setIsChatOpen(!isChatOpen);
+  const searchUsers = async (query: string) => {
+    if (!query.trim() || !user) return;
+    
+    setIsSearching(true);
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, username, display_name, avatar_url, privacy_mode')
+        .or(`username.ilike.%${query}%,display_name.ilike.%${query}%`)
+        .neq('id', user.id) // Exclude current user
+        .limit(10);
+
+      if (error) {
+        console.error('Error searching users:', error);
+        return;
+      }
+
+      setSearchResults(data || []);
+    } catch (error) {
+      console.error('Error searching users:', error);
+    }
+    setIsSearching(false);
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
+  const followUser = async (userId: string) => {
+    if (!user) return;
+
+    try {
+      const { error } = await supabase
+        .from('follows')
+        .insert({
+          follower_id: user.id,
+          following_id: userId
+        });
+
+      if (error) {
+        console.error('Error following user:', error);
+        toast({
+          title: "Error",
+          description: "Failed to follow user",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      toast({
+        title: "Success",
+        description: "User followed successfully"
+      });
+      
+      fetchFollowData();
+    } catch (error) {
+      console.error('Error following user:', error);
+    }
   };
+
+  const unfollowUser = async (userId: string) => {
+    if (!user) return;
+
+    try {
+      const { error } = await supabase
+        .from('follows')
+        .delete()
+        .eq('follower_id', user.id)
+        .eq('following_id', userId);
+
+      if (error) {
+        console.error('Error unfollowing user:', error);
+        toast({
+          title: "Error",
+          description: "Failed to unfollow user",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      toast({
+        title: "Success",
+        description: "User unfollowed successfully"
+      });
+      
+      fetchFollowData();
+    } catch (error) {
+      console.error('Error unfollowing user:', error);
+    }
+  };
+
+  useEffect(() => {
+    if (user) {
+      fetchUserProfile();
+      fetchUserPosts();
+      fetchFollowData();
+    }
+    setLoading(false);
+  }, [user]);
+
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (searchQuery) {
+        searchUsers(searchQuery);
+      } else {
+        setSearchResults([]);
+      }
+    }, 300);
+
+    return () => clearTimeout(timeoutId);
+  }, [searchQuery]);
 
   if (authLoading || !user) {
     return (
@@ -159,318 +335,397 @@ const Profile = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground w-full relative overflow-x-hidden pb-20">
+    <div className="min-h-screen bg-background pb-20">
       <div className="absolute inset-0 -z-10 h-full w-full bg-background bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-[size:14px_24px]">
         <div className="absolute left-0 right-0 top-0 -z-10 m-auto h-[310px] w-[310px] rounded-full bg-primary/10 opacity-20 blur-[100px]"></div>
       </div>
-      
-      <div className="flex h-screen">
-        <div className={`flex-1 transition-all duration-300 ${isChatOpen ? 'mr-80' : 'mr-0'}`}>
-          <Header />
-          
-          <main className="container mx-auto px-4 py-8">
-            <div className="max-w-4xl mx-auto">
-              {/* Profile Header */}
-              <Card className="bg-gradient-to-r from-primary/5 to-secondary/5 backdrop-blur-sm border border-primary/20 mb-8 overflow-hidden">
-                <CardContent className="p-8">
-                  <div className="flex items-center space-x-6">
-                    <div className="relative">
-                      <div className="w-24 h-24 bg-gradient-to-br from-primary to-secondary rounded-full flex items-center justify-center ring-4 ring-primary/20">
-                        <User className="h-12 w-12 text-white" />
-                      </div>
-                      <div className="absolute -bottom-1 -right-1 w-8 h-8 bg-green-500 rounded-full border-4 border-background flex items-center justify-center">
-                        <div className="w-3 h-3 bg-white rounded-full animate-pulse"></div>
-                      </div>
-                    </div>
-                    <div className="flex-1">
-                      {!isEditing ? (
-                        <>
-                          <h2 className="text-3xl font-bold mb-2 bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-                            {userProfile?.display_name || userProfile?.username || 'Anonymous User'}
-                          </h2>
-                          <p className="text-muted-foreground mb-1">@{userProfile?.username}</p>
-                          <p className="text-sm text-muted-foreground mb-3">
-                            Member since {userProfile ? formatDate(userProfile.created_at) : 'N/A'}
-                          </p>
+
+      <Header />
+      <ChatToggle isOpen={isChatOpen} onToggle={() => setIsChatOpen(!isChatOpen)} />
+
+      <main className="container mx-auto px-4 py-8 max-w-4xl">
+        <div className="space-y-6">
+          {/* Profile Card */}
+          <Card className="bg-card/50 backdrop-blur-sm border-border/20">
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Users className="h-5 w-5 mr-2 text-primary" />
+                Profile Information
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {isEditing ? (
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="display-name">Display Name</Label>
+                    <Input
+                      id="display-name"
+                      value={editForm.display_name}
+                      onChange={(e) => setEditForm(prev => ({ ...prev, display_name: e.target.value }))}
+                      placeholder="Enter your display name"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="username">Username</Label>
+                    <Input
+                      id="username"
+                      value={editForm.username}
+                      onChange={(e) => setEditForm(prev => ({ ...prev, username: e.target.value }))}
+                      placeholder="Enter your username"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="privacy-mode">Profile Privacy</Label>
+                    <Select
+                      value={editForm.privacy_mode}
+                      onValueChange={(value) => setEditForm(prev => ({ ...prev, privacy_mode: value }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select privacy mode" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="public">
                           <div className="flex items-center space-x-2">
-                            <Badge className="bg-green-500/10 text-green-500 hover:bg-green-500/20 transition-colors">
-                              <Shield className="w-3 h-3 mr-1" />
-                              Verified
-                            </Badge>
-                            <Badge className="bg-blue-500/10 text-blue-500 hover:bg-blue-500/20 transition-colors">
-                              <Award className="w-3 h-3 mr-1" />
-                              Guardian
-                            </Badge>
+                            <Eye className="h-4 w-4" />
+                            <div>
+                              <div>Public</div>
+                              <div className="text-xs text-muted-foreground">Everyone can see your posts and profile</div>
+                            </div>
                           </div>
-                        </>
-                      ) : (
-                        <div className="space-y-4">
-                          <div>
-                            <Label htmlFor="display_name">Display Name</Label>
-                            <Input
-                              id="display_name"
-                              value={editForm.display_name}
-                              onChange={(e) => setEditForm({...editForm, display_name: e.target.value})}
-                              placeholder="Your display name"
-                            />
+                        </SelectItem>
+                        <SelectItem value="private">
+                          <div className="flex items-center space-x-2">
+                            <Users className="h-4 w-4" />
+                            <div>
+                              <div>Private</div>
+                              <div className="text-xs text-muted-foreground">Only followers can see your posts</div>
+                            </div>
                           </div>
-                          <div>
-                            <Label htmlFor="username">Username</Label>
-                            <Input
-                              id="username"
-                              value={editForm.username}
-                              onChange={(e) => setEditForm({...editForm, username: e.target.value})}
-                              placeholder="Your username"
-                            />
+                        </SelectItem>
+                        <SelectItem value="secure">
+                          <div className="flex items-center space-x-2">
+                            <Shield className="h-4 w-4" />
+                            <div>
+                              <div>Secure</div>
+                              <div className="text-xs text-muted-foreground">Posts visible but personal details hidden</div>
+                            </div>
                           </div>
-                        </div>
-                      )}
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="flex space-x-2">
+                    <Button onClick={updateProfile} size="sm">
+                      <Save className="h-4 w-4 mr-2" />
+                      Save
+                    </Button>
+                    <Button variant="outline" onClick={() => setIsEditing(false)} size="sm">
+                      <X className="h-4 w-4 mr-2" />
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="flex items-center space-x-4">
+                    <Avatar className="h-20 w-20">
+                      <AvatarImage src={profile?.avatar_url} alt={profile?.display_name} />
+                      <AvatarFallback>
+                        {profile?.display_name?.charAt(0)?.toUpperCase() || profile?.username?.charAt(0)?.toUpperCase() || 'U'}
+                      </AvatarFallback>
+                    </Avatar>
+                    
+                    <div className="flex-1">
+                      <h2 className="text-2xl font-bold">{profile?.display_name || 'Anonymous User'}</h2>
+                      <p className="text-muted-foreground">@{profile?.username}</p>
+                      <div className="flex items-center mt-2 text-sm text-muted-foreground">
+                        <Calendar className="h-4 w-4 mr-1" />
+                        Joined {profile ? new Date(profile.created_at).toLocaleDateString() : 'N/A'}
+                      </div>
+                      <div className="flex items-center mt-1">
+                        {profile?.privacy_mode === 'public' && (
+                          <Badge variant="secondary" className="text-xs">
+                            <Eye className="h-3 w-3 mr-1" />
+                            Public Profile
+                          </Badge>
+                        )}
+                        {profile?.privacy_mode === 'private' && (
+                          <Badge variant="secondary" className="text-xs">
+                            <Users className="h-3 w-3 mr-1" />
+                            Private Profile
+                          </Badge>
+                        )}
+                        {profile?.privacy_mode === 'secure' && (
+                          <Badge variant="secondary" className="text-xs">
+                            <Shield className="h-3 w-3 mr-1" />
+                            Secure Profile
+                          </Badge>
+                        )}
+                      </div>
                     </div>
-                    <div className="flex flex-col space-y-2">
-                      {!isEditing ? (
-                        <Button 
-                          variant="outline" 
-                          onClick={() => setIsEditing(true)}
-                          className="hover:scale-105 transition-transform"
-                        >
-                          <Edit className="h-4 w-4 mr-2" />
-                          Edit Profile
-                        </Button>
-                      ) : (
-                        <>
-                          <Button 
-                            onClick={updateProfile} 
-                            disabled={loading}
-                            className="hover:scale-105 transition-transform"
-                          >
-                            <Save className="h-4 w-4 mr-2" />
-                            {loading ? 'Saving...' : 'Save'}
-                          </Button>
-                          <Button 
-                            variant="outline" 
-                            onClick={() => setIsEditing(false)}
-                            className="hover:scale-105 transition-transform"
-                          >
-                            Cancel
-                          </Button>
-                        </>
-                      )}
+                    
+                    <Button onClick={() => setIsEditing(true)} variant="outline" size="sm">
+                      <Edit3 className="h-4 w-4 mr-2" />
+                      Edit Profile
+                    </Button>
+                  </div>
+                  
+                  {/* Follow Stats */}
+                  <div className="flex space-x-6 pt-4">
+                    <div className="text-center">
+                      <div className="text-2xl font-bold">{followData.followers_count}</div>
+                      <div className="text-sm text-muted-foreground">Followers</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-2xl font-bold">{followData.following_count}</div>
+                      <div className="text-sm text-muted-foreground">Following</div>
                     </div>
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+              )}
+            </CardContent>
+          </Card>
 
-              {/* Real Stats Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                <Card className="bg-gradient-to-br from-blue-500/10 to-blue-600/10 backdrop-blur-sm border border-blue-500/20 hover:scale-105 transition-transform">
-                  <CardContent className="p-6 text-center">
-                    <FileText className="h-8 w-8 text-blue-500 mx-auto mb-3" />
-                    <h3 className="text-2xl font-bold mb-1">{userPosts.length}</h3>
-                    <p className="text-sm text-muted-foreground">Reports Submitted</p>
-                  </CardContent>
-                </Card>
+          {/* Search Users */}
+          <Card className="bg-card/50 backdrop-blur-sm border-border/20">
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Search className="h-5 w-5 mr-2 text-primary" />
+                Find Users
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <Input
+                  placeholder="Search by username or display name..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full"
+                />
                 
-                <Card className="bg-gradient-to-br from-green-500/10 to-green-600/10 backdrop-blur-sm border border-green-500/20 hover:scale-105 transition-transform">
-                  <CardContent className="p-6 text-center">
-                    <Calendar className="h-8 w-8 text-green-500 mx-auto mb-3" />
-                    <h3 className="text-2xl font-bold mb-1">
-                      {userProfile ? Math.floor((Date.now() - new Date(userProfile.created_at).getTime()) / (1000 * 60 * 60 * 24)) : 0}
-                    </h3>
-                    <p className="text-sm text-muted-foreground">Days Active</p>
-                  </CardContent>
-                </Card>
+                {isSearching && (
+                  <div className="text-center text-muted-foreground">Searching...</div>
+                )}
                 
-                <Card className="bg-gradient-to-br from-purple-500/10 to-purple-600/10 backdrop-blur-sm border border-purple-500/20 hover:scale-105 transition-transform">
-                  <CardContent className="p-6 text-center">
-                    <Lock className="h-8 w-8 text-purple-500 mx-auto mb-3" />
-                    <h3 className="text-2xl font-bold mb-1">Maximum</h3>
-                    <p className="text-sm text-muted-foreground">Privacy Level</p>
-                  </CardContent>
-                </Card>
+                {searchResults.length > 0 && (
+                  <div className="space-y-2 max-h-60 overflow-y-auto">
+                    {searchResults.map((result) => (
+                      <div key={result.id} className="flex items-center justify-between p-3 rounded-lg bg-background/50">
+                        <div className="flex items-center space-x-3">
+                          <Avatar className="h-10 w-10">
+                            <AvatarImage src={result.avatar_url} alt={result.display_name} />
+                            <AvatarFallback>
+                              {result.display_name?.charAt(0)?.toUpperCase() || result.username?.charAt(0)?.toUpperCase() || 'U'}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <div className="font-medium">{result.display_name || result.username}</div>
+                            <div className="text-sm text-muted-foreground">@{result.username}</div>
+                          </div>
+                          {result.privacy_mode === 'private' && (
+                            <Lock className="h-4 w-4 text-muted-foreground" />
+                          )}
+                          {result.privacy_mode === 'secure' && (
+                            <Shield className="h-4 w-4 text-muted-foreground" />
+                          )}
+                        </div>
+                        <Button
+                          size="sm"
+                          onClick={() => followUser(result.id)}
+                          className="flex items-center space-x-1"
+                        >
+                          <UserPlus className="h-4 w-4" />
+                          <span>Follow</span>
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
                 
-                <Card className="bg-gradient-to-br from-orange-500/10 to-orange-600/10 backdrop-blur-sm border border-orange-500/20 hover:scale-105 transition-transform">
-                  <CardContent className="p-6 text-center">
-                    <Shield className="h-8 w-8 text-orange-500 mx-auto mb-3" />
-                    <h3 className="text-2xl font-bold mb-1">Guardian</h3>
-                    <p className="text-sm text-muted-foreground">Community Rank</p>
-                  </CardContent>
-                </Card>
+                {searchQuery && !isSearching && searchResults.length === 0 && (
+                  <div className="text-center text-muted-foreground py-4">
+                    No users found matching "{searchQuery}"
+                  </div>
+                )}
               </div>
+            </CardContent>
+          </Card>
 
-              {/* User's Real Posts */}
-              <Card className="bg-card/50 backdrop-blur-sm border border-primary/20 mb-8 overflow-hidden">
-                <CardHeader className="bg-gradient-to-r from-primary/5 to-secondary/5">
-                  <CardTitle className="flex items-center">
-                    <FileText className="h-5 w-5 mr-2" />
-                    Your Reports ({userPosts.length})
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="p-0">
-                  {userPosts.length === 0 ? (
-                    <div className="p-8 text-center">
-                      <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4 opacity-50" />
-                      <p className="text-lg font-medium text-muted-foreground mb-2">No reports submitted yet</p>
-                      <p className="text-sm text-muted-foreground">Start by submitting your first anonymous report</p>
-                    </div>
-                  ) : (
-                    <div className="divide-y divide-border">
-                      {userPosts.slice(0, 5).map((post, index) => (
-                        <div key={post.id} className="p-6 hover:bg-muted/20 transition-colors">
-                          <div className="flex items-start space-x-4">
-                            <div className="flex-shrink-0">
-                              <div className="w-10 h-10 bg-primary/20 rounded-full flex items-center justify-center">
-                                <FileText className="h-5 w-5 text-primary" />
-                              </div>
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <h4 className="font-medium text-foreground truncate">{post.title}</h4>
-                              <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
-                                {post.content.substring(0, 150)}
-                                {post.content.length > 150 && '...'}
-                              </p>
-                              <div className="flex items-center space-x-4 mt-3 text-xs text-muted-foreground">
-                                <span className="flex items-center">
-                                  <Calendar className="w-3 h-3 mr-1" />
-                                  {formatDate(post.created_at)}
-                                </span>
-                                {post.location && (
-                                  <span className="flex items-center">
-                                    <MapPin className="w-3 h-3 mr-1" />
-                                    {post.location}
-                                  </span>
-                                )}
-                                {post.media_urls && post.media_urls.length > 0 && (
-                                  <Badge variant="secondary" className="text-xs">
-                                    {post.media_urls.length} media files
-                                  </Badge>
-                                )}
-                              </div>
-                            </div>
-                            <Badge 
-                              variant={post.status === 'active' ? 'default' : 'secondary'}
-                              className="text-xs"
-                            >
-                              {post.status}
-                            </Badge>
+          {/* Statistics */}
+          <Card className="bg-card/50 backdrop-blur-sm border-border/20">
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <FileText className="h-5 w-5 mr-2 text-primary" />
+                Your Statistics
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="text-center p-4 rounded-lg bg-primary/5">
+                  <div className="text-2xl font-bold text-primary">{posts.length}</div>
+                  <div className="text-sm text-muted-foreground">Reports Submitted</div>
+                </div>
+                <div className="text-center p-4 rounded-lg bg-secondary/20">
+                  <div className="text-2xl font-bold text-secondary-foreground">
+                    {profile ? Math.floor((new Date().getTime() - new Date(profile.created_at).getTime()) / (1000 * 60 * 60 * 24)) : 0}
+                  </div>
+                  <div className="text-sm text-muted-foreground">Days Active</div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Recent Reports */}
+          <Card className="bg-card/50 backdrop-blur-sm border-border/20">
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <FileText className="h-5 w-5 mr-2 text-primary" />
+                Your Recent Reports
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {posts.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p>No reports submitted yet</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {posts.slice(0, 5).map((post) => (
+                    <div key={post.id} className="p-4 rounded-lg bg-background/50 border border-border/20">
+                      <div className="flex justify-between items-start">
+                        <div className="flex-1">
+                          <h3 className="font-medium">{post.title}</h3>
+                          <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
+                            {post.content.substring(0, 100)}...
+                          </p>
+                          <div className="flex items-center mt-2 text-xs text-muted-foreground space-x-4">
+                            <span className="flex items-center">
+                              <Clock className="h-3 w-3 mr-1" />
+                              {new Date(post.created_at).toLocaleDateString()}
+                            </span>
+                            {post.location && (
+                              <span className="flex items-center">
+                                <MapPin className="h-3 w-3 mr-1" />
+                                {post.location}
+                              </span>
+                            )}
                           </div>
                         </div>
-                      ))}
-                      {userPosts.length > 5 && (
-                        <div className="p-4 text-center">
-                          <p className="text-sm text-muted-foreground">
-                            Showing 5 of {userPosts.length} reports
-                          </p>
-                        </div>
-                      )}
+                        <Badge variant={post.status === 'active' ? 'default' : 'secondary'}>
+                          {post.status}
+                        </Badge>
+                      </div>
                     </div>
-                  )}
-                </CardContent>
-              </Card>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
 
-              {/* Settings & Privacy */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                <Card className="bg-gradient-to-br from-green-500/5 to-green-600/5 backdrop-blur-sm border border-green-500/20">
-                  <CardHeader>
-                    <CardTitle className="flex items-center text-green-600">
-                      <Lock className="h-5 w-5 mr-2" />
-                      Privacy Settings
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-6">
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-1">
-                        <p className="font-medium">Anonymous Mode</p>
-                        <p className="text-sm text-muted-foreground">Hide your identity in reports</p>
-                      </div>
-                      <Switch 
-                        checked={settings.anonymous_mode}
-                        onCheckedChange={(checked) => setSettings({...settings, anonymous_mode: checked})}
-                      />
-                    </div>
-                    
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-1">
-                        <p className="font-medium">Email Notifications</p>
-                        <p className="text-sm text-muted-foreground">Receive updates about your reports</p>
-                      </div>
-                      <Switch 
-                        checked={settings.email_notifications}
-                        onCheckedChange={(checked) => setSettings({...settings, email_notifications: checked})}
-                      />
-                    </div>
-                    
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-1">
-                        <p className="font-medium">Data Sharing</p>
-                        <p className="text-sm text-muted-foreground">Share anonymized data for research</p>
-                      </div>
-                      <Switch 
-                        checked={settings.data_sharing}
-                        onCheckedChange={(checked) => setSettings({...settings, data_sharing: checked})}
-                      />
-                    </div>
-                    
-                    <div className="pt-4 border-t border-border">
-                      <Button className="w-full">
-                        <Save className="h-4 w-4 mr-2" />
-                        Save Privacy Settings
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
+          {/* Privacy & Security Settings */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Privacy Settings */}
+            <Card className="bg-card/50 backdrop-blur-sm border-border/20">
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Lock className="h-5 w-5 mr-2 text-primary" />
+                  Privacy Settings
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-medium">Anonymous Mode</p>
+                    <p className="text-xs text-muted-foreground">Hide your identity in reports</p>
+                  </div>
+                  <Switch
+                    checked={settings.anonymousMode}
+                    onCheckedChange={(checked) => setSettings(prev => ({ ...prev, anonymousMode: checked }))}
+                  />
+                </div>
+                
+                <Separator />
+                
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-medium">Email Notifications</p>
+                    <p className="text-xs text-muted-foreground">Get updates about your reports</p>
+                  </div>
+                  <Switch
+                    checked={settings.notifications}
+                    onCheckedChange={(checked) => setSettings(prev => ({ ...prev, notifications: checked }))}
+                  />
+                </div>
+                
+                <Separator />
+                
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-medium">Data Sharing</p>
+                    <p className="text-xs text-muted-foreground">Share data for analytics</p>
+                  </div>
+                  <Switch
+                    checked={settings.dataSharing}
+                    onCheckedChange={(checked) => setSettings(prev => ({ ...prev, dataSharing: checked }))}
+                  />
+                </div>
+              </CardContent>
+            </Card>
 
-                <Card className="bg-gradient-to-br from-blue-500/5 to-blue-600/5 backdrop-blur-sm border border-blue-500/20">
-                  <CardHeader>
-                    <CardTitle className="flex items-center text-blue-600">
-                      <Shield className="h-5 w-5 mr-2" />
-                      Security Status
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="flex items-center justify-between p-4 rounded-lg bg-green-500/10 border border-green-500/20">
-                      <div>
-                        <p className="font-medium text-green-700">End-to-End Encryption</p>
-                        <p className="text-sm text-green-600">Your data is encrypted at all times</p>
-                      </div>
-                      <Badge className="bg-green-500/20 text-green-700 border-green-500/30">
-                        Active
-                      </Badge>
+            {/* Security Status */}
+            <Card className="bg-card/50 backdrop-blur-sm border-border/20">
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Shield className="h-5 w-5 mr-2 text-primary" />
+                  Security Status
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <div className="h-2 w-2 bg-green-500 rounded-full"></div>
+                    <div>
+                      <p className="font-medium">End-to-End Encryption</p>
+                      <p className="text-xs text-muted-foreground">Your data is encrypted</p>
                     </div>
-                    
-                    <div className="flex items-center justify-between p-4 rounded-lg bg-green-500/10 border border-green-500/20">
-                      <div>
-                        <p className="font-medium text-green-700">Secure Storage</p>
-                        <p className="text-sm text-green-600">Files stored with military-grade security</p>
-                      </div>
-                      <Badge className="bg-green-500/20 text-green-700 border-green-500/30">
-                        Protected
-                      </Badge>
+                  </div>
+                  <Shield className="h-4 w-4 text-green-500" />
+                </div>
+                
+                <Separator />
+                
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <div className="h-2 w-2 bg-green-500 rounded-full"></div>
+                    <div>
+                      <p className="font-medium">Secure Storage</p>
+                      <p className="text-xs text-muted-foreground">Data stored securely</p>
                     </div>
-                    
-                    <div className="flex items-center justify-between p-4 rounded-lg bg-blue-500/10 border border-blue-500/20">
-                      <div>
-                        <p className="font-medium text-blue-700">Two-Factor Auth</p>
-                        <p className="text-sm text-blue-600">Add an extra layer of security</p>
-                      </div>
-                      <Button variant="outline" size="sm" className="border-blue-500/30 text-blue-600 hover:bg-blue-500/10">
-                        Enable
-                      </Button>
+                  </div>
+                  <Database className="h-4 w-4 text-green-500" />
+                </div>
+                
+                <Separator />
+                
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <div className="h-2 w-2 bg-yellow-500 rounded-full"></div>
+                    <div>
+                      <p className="font-medium">Two-Factor Authentication</p>
+                      <p className="text-xs text-muted-foreground">Recommended for security</p>
                     </div>
-                  </CardContent>
-                </Card>
-              </div>
-            </div>
-          </main>
+                  </div>
+                  <Key className="h-4 w-4 text-yellow-500" />
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </div>
-
-        <div className={`fixed top-0 right-0 h-full w-80 transform transition-transform duration-300 z-40 ${
-          isChatOpen ? 'translate-x-0' : 'translate-x-full'
-        }`}>
-          <TelegramChat />
-        </div>
-      </div>
-
-      <ChatToggle isOpen={isChatOpen} onToggle={toggleChat} />
+      </main>
     </div>
   );
 };
