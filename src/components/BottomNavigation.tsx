@@ -12,9 +12,7 @@ const BottomNavigation = () => {
   const baseNavItems = [
     { path: '/', label: 'Home', icon: Home },
     { path: '/submit', label: 'Report', icon: FileText },
-    { path: '/updates', label: 'Updates', icon: Bell },
     { path: '/trending', label: 'Trending', icon: TrendingUp },
-    { path: '/secure-chat', label: 'Secure', icon: Shield },
     { path: '/profile', label: 'Profile', icon: User },
   ];
 
