@@ -249,6 +249,150 @@ export type Database = {
         }
         Relationships: []
       }
+      stories: {
+        Row: {
+          caption: string | null
+          created_at: string
+          expires_at: string
+          id: string
+          is_active: boolean
+          location: string | null
+          media_type: string
+          media_url: string
+          music_url: string | null
+          updated_at: string
+          user_id: string
+          view_count: number | null
+        }
+        Insert: {
+          caption?: string | null
+          created_at?: string
+          expires_at?: string
+          id?: string
+          is_active?: boolean
+          location?: string | null
+          media_type?: string
+          media_url: string
+          music_url?: string | null
+          updated_at?: string
+          user_id: string
+          view_count?: number | null
+        }
+        Update: {
+          caption?: string | null
+          created_at?: string
+          expires_at?: string
+          id?: string
+          is_active?: boolean
+          location?: string | null
+          media_type?: string
+          media_url?: string
+          music_url?: string | null
+          updated_at?: string
+          user_id?: string
+          view_count?: number | null
+        }
+        Relationships: []
+      }
+      story_interactions: {
+        Row: {
+          created_at: string
+          id: string
+          interaction_data: Json
+          interaction_type: string
+          position_x: number | null
+          position_y: number | null
+          story_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          interaction_data: Json
+          interaction_type: string
+          position_x?: number | null
+          position_y?: number | null
+          story_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          interaction_data?: Json
+          interaction_type?: string
+          position_x?: number | null
+          position_y?: number | null
+          story_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "story_interactions_story_id_fkey"
+            columns: ["story_id"]
+            isOneToOne: false
+            referencedRelation: "stories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      story_responses: {
+        Row: {
+          created_at: string
+          id: string
+          interaction_id: string
+          response_data: Json
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          interaction_id: string
+          response_data: Json
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          interaction_id?: string
+          response_data?: Json
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "story_responses_interaction_id_fkey"
+            columns: ["interaction_id"]
+            isOneToOne: false
+            referencedRelation: "story_interactions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      story_views: {
+        Row: {
+          id: string
+          story_id: string
+          viewed_at: string
+          viewer_id: string
+        }
+        Insert: {
+          id?: string
+          story_id: string
+          viewed_at?: string
+          viewer_id: string
+        }
+        Update: {
+          id?: string
+          story_id?: string
+          viewed_at?: string
+          viewer_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "story_views_story_id_fkey"
+            columns: ["story_id"]
+            isOneToOne: false
+            referencedRelation: "stories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
