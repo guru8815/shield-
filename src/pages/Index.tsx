@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import Header from '@/components/Header';
 import PostFeed from '@/components/PostFeed';
+import StoriesBar from '@/components/StoriesBar';
 import TelegramChat from '@/components/TelegramChat';
 import ChatToggle from '@/components/ChatToggle';
 
@@ -20,10 +21,15 @@ const Index = () => {
       <div className="flex h-screen">
         {/* Main Content */}
         <div className={`flex-1 transition-all duration-300 ${isChatOpen ? 'mr-80' : 'mr-0'}`}>
-          <Header />
-          
-          <main className="container mx-auto px-4 py-8">
-            <PostFeed />
+      <Header />
+      
+      {/* Stories Section */}
+      <div className="bg-card/50 border-b border-border">
+        <StoriesBar />
+      </div>
+      
+      <main className="container mx-auto px-4 py-8">
+        <PostFeed />
           </main>
 
           <footer className="text-center py-8 mt-8 text-muted-foreground text-sm border-t border-border">

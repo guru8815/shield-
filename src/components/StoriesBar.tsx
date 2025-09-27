@@ -16,11 +16,6 @@ interface Story {
   location?: string;
   expires_at: string;
   created_at: string;
-  profiles?: {
-    username: string;
-    display_name?: string;
-    avatar_url?: string;
-  };
 }
 
 interface UserStories {
@@ -43,33 +38,51 @@ const StoriesBar = () => {
     if (!user) return;
 
     try {
+      // First get all active stories
       const { data: stories, error } = await supabase
         .from('stories')
-        .select(`
-          *,
-          profiles!stories_user_id_fkey (
-            username,
-            display_name,
-            avatar_url
-          )
-        `)
+        .select('*')
         .eq('is_active', true)
         .gt('expires_at', new Date().toISOString())
         .order('created_at', { ascending: false });
 
       if (error) throw error;
 
+      if (!stories || stories.length === 0) {
+        setUserStories([]);
+        return;
+      }
+
+      // Get unique user IDs
+      const userIds = [...new Set(stories.map(story => story.user_id))];
+
+      // Fetch profiles for those users
+      const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, username, display_name, avatar_url')
+        .in('id', userIds);
+
+      if (profilesError) throw profilesError;
+
+      // Create a map of profiles for quick lookup
+      const profilesMap = (profiles || []).reduce((acc, profile) => {
+        acc[profile.id] = profile;
+        return acc;
+      }, {} as Record<string, any>);
+
       // Group stories by user
       const groupedStories: { [key: string]: UserStories } = {};
       
-        stories?.forEach((story) => {
+      stories.forEach((story) => {
         const userId = story.user_id;
+        const profile = profilesMap[userId];
+        
         if (!groupedStories[userId]) {
           groupedStories[userId] = {
             userId,
-            username: story.profiles?.username || 'Unknown',
-            displayName: story.profiles?.display_name,
-            avatarUrl: story.profiles?.avatar_url,
+            username: profile?.username || 'Unknown User',
+            displayName: profile?.display_name,
+            avatarUrl: profile?.avatar_url,
             stories: [],
             hasUnviewedStories: true, // For now, assume all are unviewed
           };
