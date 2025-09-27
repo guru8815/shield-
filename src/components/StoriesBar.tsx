@@ -42,11 +42,6 @@ const StoriesBar = () => {
   const [loading, setLoading] = useState(true);
 
   const fetchStories = async () => {
-    if (!user) {
-      setLoading(false);
-      return;
-    }
-
     try {
       // First get all active stories
       const { data: stories, error } = await supabase
@@ -178,6 +173,19 @@ const StoriesBar = () => {
             </p>
           </div>
         ))}
+
+        {/* Empty State Message */}
+        {userStories.length === 0 && !user && (
+          <div className="flex-1 text-center py-4">
+            <p className="text-muted-foreground text-sm">Sign in to view and create stories</p>
+          </div>
+        )}
+
+        {userStories.length === 0 && user && (
+          <div className="flex-1 text-center py-4">
+            <p className="text-muted-foreground text-sm">No stories yet. Be the first to share!</p>
+          </div>
+        )}
       </div>
 
       {/* Story Viewer Modal */}
