@@ -18,6 +18,13 @@ interface Story {
   created_at: string;
 }
 
+interface Profile {
+  id: string;
+  username: string;
+  display_name?: string;
+  avatar_url?: string;
+}
+
 interface UserStories {
   userId: string;
   username: string;
@@ -35,7 +42,10 @@ const StoriesBar = () => {
   const [loading, setLoading] = useState(true);
 
   const fetchStories = async () => {
-    if (!user) return;
+    if (!user) {
+      setLoading(false);
+      return;
+    }
 
     try {
       // First get all active stories
@@ -46,7 +56,10 @@ const StoriesBar = () => {
         .gt('expires_at', new Date().toISOString())
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching stories:', error);
+        throw error;
+      }
 
       if (!stories || stories.length === 0) {
         setUserStories([]);
@@ -54,7 +67,7 @@ const StoriesBar = () => {
       }
 
       // Get unique user IDs
-      const userIds = [...new Set(stories.map(story => story.user_id))];
+      const userIds = [...new Set(stories.map((story: Story) => story.user_id))];
 
       // Fetch profiles for those users
       const { data: profiles, error: profilesError } = await supabase
@@ -62,18 +75,21 @@ const StoriesBar = () => {
         .select('id, username, display_name, avatar_url')
         .in('id', userIds);
 
-      if (profilesError) throw profilesError;
+      if (profilesError) {
+        console.error('Error fetching profiles:', profilesError);
+        throw profilesError;
+      }
 
       // Create a map of profiles for quick lookup
-      const profilesMap = (profiles || []).reduce((acc, profile) => {
+      const profilesMap = (profiles || []).reduce((acc: Record<string, Profile>, profile: Profile) => {
         acc[profile.id] = profile;
         return acc;
-      }, {} as Record<string, any>);
+      }, {});
 
       // Group stories by user
       const groupedStories: { [key: string]: UserStories } = {};
       
-      stories.forEach((story) => {
+      stories.forEach((story: Story) => {
         const userId = story.user_id;
         const profile = profilesMap[userId];
         
@@ -92,7 +108,8 @@ const StoriesBar = () => {
 
       setUserStories(Object.values(groupedStories));
     } catch (error) {
-      console.error('Error fetching stories:', error);
+      console.error('Error in fetchStories:', error);
+      setUserStories([]);
     } finally {
       setLoading(false);
     }
@@ -150,7 +167,7 @@ const StoriesBar = () => {
                 : 'bg-muted'
             }`}>
               <Avatar className="w-14 h-14 border-2 border-background">
-                <AvatarImage src={userStory.avatarUrl} />
+                <AvatarImage src={userStory.avatarUrl || undefined} />
                 <AvatarFallback>
                   {userStory.username.charAt(0).toUpperCase()}
                 </AvatarFallback>
