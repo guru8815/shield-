@@ -34,12 +34,70 @@ interface UserStories {
   hasUnviewedStories: boolean;
 }
 
+// TEMPORARY TEST DATA - Remove after testing
+const MOCK_STORIES: UserStories[] = [
+  {
+    userId: 'test-user-1',
+    username: 'emma_wilson',
+    displayName: 'Emma Wilson',
+    avatarUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Emma',
+    stories: [
+      {
+        id: 'story-1',
+        user_id: 'test-user-1',
+        media_url: 'https://images.unsplash.com/photo-1682687220742-aba13b6e50ba?w=400',
+        media_type: 'image',
+        caption: 'Beautiful sunset today! 🌅',
+        expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+        created_at: new Date().toISOString(),
+      }
+    ],
+    hasUnviewedStories: true,
+  },
+  {
+    userId: 'test-user-2',
+    username: 'john_doe',
+    displayName: 'John Doe',
+    avatarUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=John',
+    stories: [
+      {
+        id: 'story-2',
+        user_id: 'test-user-2',
+        media_url: 'https://images.unsplash.com/photo-1682687221038-404cb8830901?w=400',
+        media_type: 'image',
+        caption: 'Coffee time ☕',
+        expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+        created_at: new Date().toISOString(),
+      }
+    ],
+    hasUnviewedStories: true,
+  },
+  {
+    userId: 'test-user-3',
+    username: 'sarah_jane',
+    displayName: 'Sarah Jane',
+    avatarUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Sarah',
+    stories: [
+      {
+        id: 'story-3',
+        user_id: 'test-user-3',
+        media_url: 'https://images.unsplash.com/photo-1682687982107-14492010e05e?w=400',
+        media_type: 'image',
+        caption: 'Weekend vibes 🎉',
+        expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+        created_at: new Date().toISOString(),
+      }
+    ],
+    hasUnviewedStories: false,
+  },
+];
+
 const StoriesBar = () => {
   const { user } = useAuth();
-  const [userStories, setUserStories] = useState<UserStories[]>([]);
+  const [userStories, setUserStories] = useState<UserStories[]>(MOCK_STORIES); // Using mock data
   const [selectedStories, setSelectedStories] = useState<UserStories | null>(null);
   const [showCreator, setShowCreator] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false); // Changed to false for testing
 
   const fetchStories = async () => {
     try {
@@ -111,7 +169,11 @@ const StoriesBar = () => {
   };
 
   useEffect(() => {
-    fetchStories();
+    // Commented out for testing with mock data
+    // fetchStories();
+    
+    // Using mock data for testing
+    setUserStories(MOCK_STORIES);
   }, [user]);
 
   const handleStoryCreated = () => {
