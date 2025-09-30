@@ -133,19 +133,23 @@ const StoriesBar = () => {
 
   return (
     <>
-      <div className="flex space-x-4 p-4 overflow-x-auto scrollbar-hide">
+      <div className="flex gap-4 p-4 overflow-x-auto scrollbar-hide bg-card/80 backdrop-blur-sm">
         {/* Add Story Button */}
         {user && (
           <div className="flex-shrink-0 text-center">
-            <Button
-              variant="outline"
-              size="icon"
-              className="w-16 h-16 rounded-full border-2 border-dashed border-primary/50 hover:border-primary"
-              onClick={() => setShowCreator(true)}
-            >
-              <Plus className="w-6 h-6" />
-            </Button>
-            <p className="text-xs mt-2 text-muted-foreground">Your Story</p>
+            <div className="relative">
+              <div className="p-1 rounded-full bg-gradient-to-tr from-primary/20 to-primary/10">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="w-16 h-16 rounded-full bg-background hover:bg-muted transition-colors"
+                  onClick={() => setShowCreator(true)}
+                >
+                  <Plus className="w-6 h-6 text-primary" />
+                </Button>
+              </div>
+            </div>
+            <p className="text-xs mt-1.5 text-muted-foreground font-medium">Your Story</p>
           </div>
         )}
 
@@ -153,22 +157,24 @@ const StoriesBar = () => {
         {userStories.map((userStory) => (
           <div
             key={userStory.userId}
-            className="flex-shrink-0 text-center cursor-pointer"
+            className="flex-shrink-0 text-center cursor-pointer group"
             onClick={() => setSelectedStories(userStory)}
           >
-            <div className={`p-0.5 rounded-full ${
+            <div className={`p-[3px] rounded-full transition-transform group-hover:scale-105 ${
               userStory.hasUnviewedStories 
-                ? 'bg-gradient-to-tr from-yellow-400 to-pink-600' 
-                : 'bg-muted'
+                ? 'bg-gradient-to-tr from-yellow-400 via-pink-500 to-purple-600' 
+                : 'bg-gradient-to-tr from-muted to-muted'
             }`}>
-              <Avatar className="w-14 h-14 border-2 border-background">
-                <AvatarImage src={userStory.avatarUrl || undefined} />
-                <AvatarFallback>
-                  {userStory.username.charAt(0).toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
+              <div className="p-[2px] bg-background rounded-full">
+                <Avatar className="w-16 h-16 border-2 border-background">
+                  <AvatarImage src={userStory.avatarUrl || undefined} />
+                  <AvatarFallback className="bg-primary/10 text-primary">
+                    {userStory.username.charAt(0).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+              </div>
             </div>
-            <p className="text-xs mt-2 text-foreground max-w-[4rem] truncate">
+            <p className="text-xs mt-1.5 text-foreground max-w-[4.5rem] truncate font-medium">
               {userStory.displayName || userStory.username}
             </p>
           </div>
