@@ -196,24 +196,22 @@ const StoriesBar = () => {
   return (
     <>
       <div className="flex gap-4 p-4 overflow-x-auto scrollbar-hide bg-card/80 backdrop-blur-sm">
-        {/* Add Story Button */}
-        {user && (
-          <div className="flex-shrink-0 text-center">
-            <div className="relative">
-              <div className="p-1 rounded-full bg-gradient-to-tr from-primary/20 to-primary/10">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="w-16 h-16 rounded-full bg-background hover:bg-muted transition-colors"
-                  onClick={() => setShowCreator(true)}
-                >
-                  <Plus className="w-6 h-6 text-primary" />
-                </Button>
-              </div>
+        {/* Add Story Button - Always visible */}
+        <div className="flex-shrink-0 text-center">
+          <div className="relative">
+            <div className="p-1 rounded-full bg-gradient-to-tr from-primary/20 to-primary/10">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="w-16 h-16 rounded-full bg-background hover:bg-muted transition-colors"
+                onClick={() => setShowCreator(true)}
+              >
+                <Plus className="w-6 h-6 text-primary" />
+              </Button>
             </div>
-            <p className="text-xs mt-1.5 text-muted-foreground font-medium">Your Story</p>
           </div>
-        )}
+          <p className="text-xs mt-1.5 text-muted-foreground font-medium">Your Story</p>
+        </div>
 
         {/* User Stories */}
         {userStories.map((userStory) => (
