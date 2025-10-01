@@ -34,7 +34,7 @@ const Index = () => {
 
           <footer className="text-center py-8 mt-8 text-muted-foreground text-sm border-t border-border">
             <p>Built for truth and transparency. Your security is our priority.</p>
-            <p>&copy; {new Date().getFullYear()} Expose. All Rights Reserved.</p>
+            <p>&copy; {new Date().getFullYear()} Shield. All Rights Reserved.</p>
           </footer>
         </div>
 
