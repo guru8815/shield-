@@ -31,9 +31,10 @@ interface StoryViewerProps {
   userStories: UserStories;
   onClose: () => void;
   onStoryViewed?: () => void;
+  onNextUser?: () => void;
 }
 
-const StoryViewer = ({ userStories, onClose, onStoryViewed }: StoryViewerProps) => {
+const StoryViewer = ({ userStories, onClose, onStoryViewed, onNextUser }: StoryViewerProps) => {
   const { user } = useAuth();
   const [currentStoryIndex, setCurrentStoryIndex] = useState(0);
   const [progress, setProgress] = useState(0);
@@ -105,7 +106,12 @@ const StoryViewer = ({ userStories, onClose, onStoryViewed }: StoryViewerProps) 
       setCurrentStoryIndex(currentStoryIndex + 1);
       setProgress(0);
     } else {
-      onClose();
+      // All stories of this user done, move to next user if available
+      if (onNextUser) {
+        onNextUser();
+      } else {
+        onClose();
+      }
     }
   };
 
@@ -150,6 +156,12 @@ const StoryViewer = ({ userStories, onClose, onStoryViewed }: StoryViewerProps) 
       }
     };
   }, [currentStoryIndex, isPlaying]);
+
+  // Reset to first story when user changes
+  useEffect(() => {
+    setCurrentStoryIndex(0);
+    setProgress(0);
+  }, [userStories.userId]);
 
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {

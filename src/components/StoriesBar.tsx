@@ -96,6 +96,7 @@ const StoriesBar = () => {
   const { user } = useAuth();
   const [userStories, setUserStories] = useState<UserStories[]>(MOCK_STORIES); // Using mock data
   const [selectedStories, setSelectedStories] = useState<UserStories | null>(null);
+  const [currentUserIndex, setCurrentUserIndex] = useState<number>(0);
   const [showCreator, setShowCreator] = useState(false);
   const [loading, setLoading] = useState(false); // Changed to false for testing
 
@@ -214,11 +215,14 @@ const StoriesBar = () => {
         </div>
 
         {/* User Stories */}
-        {userStories.map((userStory) => (
+        {userStories.map((userStory, index) => (
           <div
             key={userStory.userId}
             className="flex-shrink-0 text-center cursor-pointer group"
-            onClick={() => setSelectedStories(userStory)}
+            onClick={() => {
+              setSelectedStories(userStory);
+              setCurrentUserIndex(index);
+            }}
           >
             <div className={`p-[3px] rounded-full transition-transform group-hover:scale-105 ${
               userStory.hasUnviewedStories 
@@ -260,6 +264,15 @@ const StoriesBar = () => {
           userStories={selectedStories}
           onClose={() => setSelectedStories(null)}
           onStoryViewed={fetchStories}
+          onNextUser={() => {
+            const nextIndex = currentUserIndex + 1;
+            if (nextIndex < userStories.length) {
+              setSelectedStories(userStories[nextIndex]);
+              setCurrentUserIndex(nextIndex);
+            } else {
+              setSelectedStories(null);
+            }
+          }}
         />
       )}
 
