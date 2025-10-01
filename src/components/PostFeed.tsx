@@ -39,8 +39,6 @@ const PostFeed = () => {
   
   return (
     <div className="mt-16 w-full max-w-4xl mx-auto space-y-8">
-      <h2 className="text-3xl font-bold text-center mb-8">Exposed Reports</h2>
-      
       {/* Trending Topics Section */}
       <TrendingTopics posts={mockPosts} />
       
