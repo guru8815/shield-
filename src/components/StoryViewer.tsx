@@ -2,9 +2,10 @@ import { useState, useEffect, useRef } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { X, ChevronLeft, ChevronRight, Play, Pause, Volume2, VolumeX } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight, Play, Pause, Volume2, VolumeX, Heart } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { useToast } from '@/components/ui/use-toast';
 import StoryInteractions from './StoryInteractions';
 
 interface Story {
@@ -36,10 +37,13 @@ interface StoryViewerProps {
 
 const StoryViewer = ({ userStories, onClose, onStoryViewed, onNextUser }: StoryViewerProps) => {
   const { user } = useAuth();
+  const { toast } = useToast();
   const [currentStoryIndex, setCurrentStoryIndex] = useState(0);
   const [progress, setProgress] = useState(0);
   const [isPlaying, setIsPlaying] = useState(true);
   const [isMuted, setIsMuted] = useState(false);
+  const [isLiked, setIsLiked] = useState(false);
+  const [likeCount, setLikeCount] = useState(0);
   const videoRef = useRef<HTMLVideoElement>(null);
   const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -140,9 +144,116 @@ const StoryViewer = ({ userStories, onClose, onStoryViewed, onNextUser }: StoryV
     }
   };
 
+  const checkIfLiked = async (storyId: string) => {
+    if (!user) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('story_interactions')
+        .select('id, interaction_data')
+        .eq('story_id', storyId)
+        .eq('interaction_type', 'like');
+
+      if (error) {
+        console.error('Error checking like status:', error);
+        return;
+      }
+
+      // Check if current user has liked
+      const userLike = data?.find((interaction: any) => 
+        interaction.interaction_data?.user_id === user.id
+      );
+      setIsLiked(!!userLike);
+    } catch (error) {
+      console.error('Error checking like status:', error);
+    }
+  };
+
+  const fetchLikeCount = async (storyId: string) => {
+    try {
+      const { count, error } = await supabase
+        .from('story_interactions')
+        .select('*', { count: 'exact', head: true })
+        .eq('story_id', storyId)
+        .eq('interaction_type', 'like');
+
+      if (error) {
+        console.error('Error fetching like count:', error);
+      } else {
+        setLikeCount(count || 0);
+      }
+    } catch (error) {
+      console.error('Error fetching like count:', error);
+    }
+  };
+
+  const toggleLike = async () => {
+    if (!user) {
+      toast({
+        title: "Login required",
+        description: "Please log in to like stories",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      if (isLiked) {
+        // Unlike: delete the interaction
+        // First find the interaction id
+        const { data: interactions } = await supabase
+          .from('story_interactions')
+          .select('id, interaction_data')
+          .eq('story_id', currentStory.id)
+          .eq('interaction_type', 'like');
+
+        const userInteraction = interactions?.find((i: any) => 
+          i.interaction_data?.user_id === user.id
+        );
+
+        if (userInteraction) {
+          const { error } = await supabase
+            .from('story_interactions')
+            .delete()
+            .eq('id', userInteraction.id);
+
+          if (error) throw error;
+        }
+        
+        setIsLiked(false);
+        setLikeCount(prev => Math.max(0, prev - 1));
+      } else {
+        // Like: insert interaction
+        const { error } = await supabase
+          .from('story_interactions')
+          .insert({
+            story_id: currentStory.id,
+            interaction_type: 'like',
+            interaction_data: { user_id: user.id },
+            position_x: 0.5,
+            position_y: 0.5,
+          });
+
+        if (error) throw error;
+        
+        setIsLiked(true);
+        setLikeCount(prev => prev + 1);
+      }
+    } catch (error) {
+      console.error('Error toggling like:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update like status",
+        variant: "destructive",
+      });
+    }
+  };
+
   useEffect(() => {
     if (currentStory) {
       recordStoryView(currentStory.id);
+      checkIfLiked(currentStory.id);
+      fetchLikeCount(currentStory.id);
       setProgress(0);
       
       if (isPlaying) {
@@ -286,6 +397,26 @@ const StoryViewer = ({ userStories, onClose, onStoryViewed, onNextUser }: StoryV
 
           {/* Story Interactions */}
           <StoryInteractions storyId={currentStory.id} />
+
+          {/* Like Button */}
+          <div className="absolute bottom-24 right-4 z-20 flex flex-col items-center space-y-1">
+            <Button
+              variant="ghost"
+              size="icon"
+              className={`text-white hover:bg-white/20 transition-all ${isLiked ? 'scale-110' : ''}`}
+              onClick={(e) => {
+                e.stopPropagation();
+                toggleLike();
+              }}
+            >
+              <Heart 
+                className={`w-7 h-7 ${isLiked ? 'fill-red-500 text-red-500' : ''}`}
+              />
+            </Button>
+            {likeCount > 0 && (
+              <span className="text-white text-xs font-medium">{likeCount}</span>
+            )}
+          </div>
 
           {/* Caption */}
           {currentStory.caption && (
