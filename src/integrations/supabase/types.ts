@@ -203,11 +203,13 @@ export type Database = {
       }
       profiles: {
         Row: {
+          age_verified: boolean | null
           avatar_url: string | null
           ban_reason: string | null
           banned_at: string | null
           banned_by: string | null
           created_at: string
+          date_of_birth: string | null
           display_name: string | null
           id: string
           is_banned: boolean | null
@@ -218,11 +220,13 @@ export type Database = {
           username: string
         }
         Insert: {
+          age_verified?: boolean | null
           avatar_url?: string | null
           ban_reason?: string | null
           banned_at?: string | null
           banned_by?: string | null
           created_at?: string
+          date_of_birth?: string | null
           display_name?: string | null
           id: string
           is_banned?: boolean | null
@@ -233,11 +237,13 @@ export type Database = {
           username: string
         }
         Update: {
+          age_verified?: boolean | null
           avatar_url?: string | null
           ban_reason?: string | null
           banned_at?: string | null
           banned_by?: string | null
           created_at?: string
+          date_of_birth?: string | null
           display_name?: string | null
           id?: string
           is_banned?: boolean | null
@@ -431,11 +437,23 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: Database["public"]["Enums"]["app_role"]
       }
+      get_user_age: {
+        Args: { _user_id: string }
+        Returns: number
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
+        Returns: boolean
+      }
+      meets_age_requirement: {
+        Args: { _minimum_age?: number; _user_id: string }
+        Returns: boolean
+      }
+      verify_user_age: {
+        Args: { _user_id: string }
         Returns: boolean
       }
     }
